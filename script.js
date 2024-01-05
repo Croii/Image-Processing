@@ -1,33 +1,36 @@
+// Constants
 const originalCanvasId = "canvas";
 const modifiedCanvasId = "modified-canvas";
 const imgWidth = 300;
 const imgHeight = 300;
 
-// Prewitt operator
+// Fetch image and start processing
+getFile();
+
+// Fetch image from the Dog API
 async function getFile() {
     try {
-        const startTimeFetch = Date.now(); // Start recording fetch execution time
-
+        const startTimeFetch = Date.now();
         const response = await fetch("https://dog.ceo/api/breeds/image/random");
+
         if (!response.ok) {
             throw new Error(`Image didn't load correctly. Status: ${response.status}`);
         }
+
         const data = await response.json();
-        // console.log(data);
         displayJsonContent(data);
-        const endTimeFetch = Date.now(); // Stop recording fetch execution time
+        const endTimeFetch = Date.now();
 
         console.log(`Fetching JSON took ${endTimeFetch - startTimeFetch} ms`);
 
-        // Draw image on canvas and apply processing
+        // Draw image on canvas and initiate processing
         drawImage(data.message);
-
-        // Stop recording image processing execution time
     } catch (error) {
         console.error(error.message);
     }
 }
 
+// Create an image element
 function createImage(imageSrc) {
     const img = new Image(imgWidth, imgHeight);
     img.crossOrigin = "anonymous";
@@ -35,7 +38,7 @@ function createImage(imageSrc) {
     return img;
 }
 
-
+// Display JSON content in the HTML
 function displayJsonContent(jsonData) {
     const jsonContainer = document.getElementById('json-container');
     jsonContainer.innerHTML = `
@@ -44,29 +47,36 @@ function displayJsonContent(jsonData) {
     `;
 }
 
-
+// Draw image on canvas
 function drawImage(imageSrc) {
     const img = createImage(imageSrc);
     drawImageOnCanvas(img, originalCanvasId, 0, 0);
 }
 
-
-function drawImageOnCanvas(img, canvasId, pozX, pozY) {
+// Draw image on specified canvas
+function drawImageOnCanvas(img, canvasId, posX, posY) {
     const canvas = document.getElementById(canvasId);
     const ctx = canvas.getContext("2d");
-    img.onload = () => {
-        ctx.drawImage(img, pozX, pozY, imgWidth, imgHeight);
 
+    img.onload = () => {
+        ctx.drawImage(img, posX, posY, imgWidth, imgHeight);
+
+        // Record the start time for processing
         const start = Date.now();
+
         if (canvasId === originalCanvasId) {
             // If it's the original canvas, perform processing
             transform(ctx, img);
         }
+
+        // Record the end time and log the execution time
         const end = Date.now();
         console.log(`Execution time: ${end - start} ms`);
     };
 }
-class rgba {
+
+// RGBA class for handling pixel data
+class RGBA {
     constructor() {
         this.red = 0;
         this.green = 0;
@@ -75,9 +85,10 @@ class rgba {
     }
 }
 
+// Convert flat array to RGBA matrix
 function convertArrayToRGBAMatrix(arr) {
     let matrixRGBA = Array.from({ length: imgWidth }, () =>
-        Array.from({ length: imgHeight }, () => new rgba())
+        Array.from({ length: imgHeight }, () => new RGBA())
     );
 
     let k = 0;
@@ -92,10 +103,10 @@ function convertArrayToRGBAMatrix(arr) {
     return matrixRGBA;
 }
 
-
+// Compute gradient using Prewitt operator
 function computeGradient(Gx, Gy) {
     let G = Array.from({ length: Gx.length }, () =>
-        Array.from({ length: Gx[0].length }, () => new rgba())
+        Array.from({ length: Gx[0].length }, () => new RGBA())
     );
 
     for (let i = 0; i < Gx.length; i++)
@@ -108,6 +119,7 @@ function computeGradient(Gx, Gy) {
     return G;
 }
 
+// Convert RGBA matrix to flat array
 function MatrixRGBAToArray(matrixRGBA) {
     let transformedImageArray = [];
     for (let i = 0; i < matrixRGBA.length; i++)
@@ -120,13 +132,12 @@ function MatrixRGBAToArray(matrixRGBA) {
     return transformedImageArray;
 }
 
-
+// Delay function for asynchronous operations
 function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-
-
+// Image processing function
 async function transform(ctx, img) {
     let startTimeTransform = Date.now();
 
@@ -137,10 +148,9 @@ async function transform(ctx, img) {
     document.getElementById("step1-time").innerHTML = "Step 1 Execution Time: " + (Date.now() - startTimeTransform) + " ms";
     await delay(1000);
     startTimeTransform = Date.now();
-    
 
     let matrixRGBA = Array.from({ length: imgWidth }, () =>
-        Array.from({ length: imgHeight }, () => new rgba())
+        Array.from({ length: imgHeight }, () => new RGBA())
     );
 
     let maskGy = [[1, 1, 1], [0, 0, 0], [-1, -1, -1]];
@@ -156,6 +166,7 @@ async function transform(ctx, img) {
     document.getElementById("step2-time").innerHTML = "Step 2 Execution Time: " + (Date.now() - startTimeTransform) + " ms";
     await delay(1000);
     startTimeTransform = Date.now();
+
     // Now that the first two lines have completed, proceed with the third line
     let transformedImageMatrixG = computeGradient(transformedImageMatrixGx, transformedImageMatrixGy);
     console.log("Step 3 completed");
@@ -168,21 +179,18 @@ async function transform(ctx, img) {
 
     const transformedImageData = new ImageData(Uint8ClampedArray.from(transformedImageArray), imgWidth, imgHeight);
 
- 
-    
     const modifiedCanvas = document.getElementById(modifiedCanvasId);
     const modifiedCtx = modifiedCanvas.getContext("2d");
-    
+
     // Clear the canvas before drawing
     document.getElementById("step4-time").innerHTML = "Step 4 Execution Time: " + (Date.now() - startTimeTransform) + " ms";
     console.log("Step 4 completed");
     await delay(1000);
     modifiedCtx.clearRect(0, 0, imgWidth, imgHeight);
     modifiedCtx.putImageData(transformedImageData, 0, 0);
-
 }
 
-
+// Apply mirroring effect to RGBA matrix
 function mirrorEffect(matrixRGBA) {
     for (let i = 0; i < matrixRGBA.length; i++) {
         for (let j = 0; j < matrixRGBA[0].length / 2; j++) {
@@ -194,6 +202,7 @@ function mirrorEffect(matrixRGBA) {
     }
 }
 
+// Convolution operation for image processing
 function matrixConvolution(mask, inputMatrix) {
     const M = inputMatrix.length;
     const N = inputMatrix[0].length;
@@ -201,12 +210,14 @@ function matrixConvolution(mask, inputMatrix) {
     const Q = mask[0].length;
 
     let outputMatrix = Array.from({ length: M }, () =>
-        Array.from({ length: N }, () => new rgba()));
+        Array.from({ length: N }, () => new RGBA())
+    );
 
     for (let i = 0; i < M; i++) {
         for (let j = 0; j < N; j++) {
-            let sum = new rgba();
+            let sum = new RGBA();
             sum.alpha = 255;
+
             for (let k = 0; k < P; k++) {
                 for (let l = 0; l < Q; l++) {
                     const rowIdx = i - Math.floor(P / 2) + k;
@@ -224,6 +235,3 @@ function matrixConvolution(mask, inputMatrix) {
     }
     return outputMatrix;
 }
-
-
-getFile();

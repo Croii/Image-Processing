@@ -128,13 +128,16 @@ function delay(ms) {
 
 
 async function transform(ctx, img) {
-    const startTimeTransform = Date.now();
+    let startTimeTransform = Date.now();
 
     const imageData = ctx.getImageData(0, 0, imgWidth, imgHeight);
     const data = imageData.data;
 
-    await delay(1000);
     console.log("Step 1 completed");
+    document.getElementById("step1-time").innerHTML = "Step 1 Execution Time: " + (Date.now() - startTimeTransform) + " ms";
+    await delay(1000);
+    startTimeTransform = Date.now();
+    
 
     let matrixRGBA = Array.from({ length: imgWidth }, () =>
         Array.from({ length: imgHeight }, () => new rgba())
@@ -149,32 +152,36 @@ async function transform(ctx, img) {
         matrixConvolution(maskGx, srcImageRGBA),
         matrixConvolution(maskGy, srcImageRGBA)
     ]);
-    await delay(1000);
     console.log("Step 2 completed");
-
+    document.getElementById("step2-time").innerHTML = "Step 2 Execution Time: " + (Date.now() - startTimeTransform) + " ms";
+    await delay(1000);
+    startTimeTransform = Date.now();
     // Now that the first two lines have completed, proceed with the third line
     let transformedImageMatrixG = computeGradient(transformedImageMatrixGx, transformedImageMatrixGy);
-    await delay(1000);
     console.log("Step 3 completed");
+    document.getElementById("step3-time").innerHTML = "Step 3 Execution Time: " + (Date.now() - startTimeTransform) + " ms";
+    await delay(1000);
+    startTimeTransform = Date.now();
 
     mirrorEffect(transformedImageMatrixG);
     let transformedImageArray = MatrixRGBAToArray(transformedImageMatrixG);
 
-    // let transformedImageData = new ImageData(Uint8ClampedArray.from(transformedImageArray), 298, 298);
     const transformedImageData = new ImageData(Uint8ClampedArray.from(transformedImageArray), imgWidth, imgHeight);
 
-    const endTimeTransform = Date.now(); // Stop recording transform execution time
-    await delay(1000);
-    console.log("Step 4 completed");
-    console.log(`Transform execution time: ${endTimeTransform - startTimeTransform} ms`);
-
+ 
+    
     const modifiedCanvas = document.getElementById(modifiedCanvasId);
     const modifiedCtx = modifiedCanvas.getContext("2d");
-
+    
     // Clear the canvas before drawing
+    document.getElementById("step4-time").innerHTML = "Step 4 Execution Time: " + (Date.now() - startTimeTransform) + " ms";
+    console.log("Step 4 completed");
+    await delay(1000);
     modifiedCtx.clearRect(0, 0, imgWidth, imgHeight);
     modifiedCtx.putImageData(transformedImageData, 0, 0);
+
 }
+
 
 function mirrorEffect(matrixRGBA) {
     for (let i = 0; i < matrixRGBA.length; i++) {

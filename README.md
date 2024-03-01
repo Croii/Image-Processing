@@ -9,10 +9,10 @@ This is an Image Processing App that fetches a random dog image from the Dog API
 - **Random Image Fetching**: The app fetches a random dog image from the Dog API using an asynchronous fetch operation.
 
 - **Image Processing Steps**:
-  1. **Step 1**: Display the fetched image on the original canvas.
-  2. **Step 2**: Apply convolution operations using Prewitt masks for gradient computation.
-  3. **Step 3**: Compute the gradient using the Prewitt operator.
-  4. **Step 4**: Apply a mirroring effect to the modified image.
+   **Step 1**: Display the fetched image on the original canvas.
+   **Step 2**: Apply convolution operations using Prewitt masks for gradient computation.
+   **Step 3**: Compute the gradient using the Prewitt operator.
+   **Step 4**: Apply a mirroring effect to the modified image.
 
 - **Execution Time Tracking**: The application tracks the execution time for each processing step and displays it in the HTML.
 
